@@ -20,14 +20,9 @@ custom:
       - '*/*'
 
 functions:
-  pdf:
-    handler: pdf.pdf
+  pdf-post-html:
+    handler: pdf.generate_pdf_post_html
     events:
-      - http:
-          path: pdf/{yearMonth}
-          method: get
-          cors: true
-          request:
-            parameters:
-              paths:
-                yearMonth: true
+      - httpApi:
+          method: post
+          path: /api/pdfhtml
