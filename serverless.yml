@@ -1,7 +1,9 @@
+org: dustbuster
+app: puppet-pdf
+
 service: puppet-pdf
 
 plugins:
-  - serverless-offline
   - serverless-apigw-binary
 
 provider:
@@ -9,6 +11,7 @@ provider:
   runtime: nodejs12.x
   region: us-west-2
   stage: ${opt:stage, 'development'}
+  lambdaHashingVersion: 20200924
   environment:
     ENV: ${self:provider.stage}
   apiGateway:
@@ -26,3 +29,5 @@ functions:
       - httpApi:
           method: post
           path: /api/pdfhtml
+          cors: true
+    timeout: 180
