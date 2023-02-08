@@ -1,17 +1,18 @@
 'use strict'
 const chromium = require('chrome-aws-lambda')
-const pug = require('pug')
-const path = require('path')
 
 module.exports.generate_pdf_post_html = async (event, context) => {
-  
   console.log('generate_pdf_post_html');
+  console.log('event');
+  console.log(event);
+
+  console.log('context');
+  console.log(context);
   
   if (typeof event['body'] === 'string') {
-    // console.log(event['body']);
     var decodedText = convertBase64RequestToString(event['body']);
-    console.log('decodedText');
-    console.log(decodedText);
+  } else {
+    console.log('body does not exist, see event log');
   }
   const html = decodedText;
 
@@ -27,9 +28,9 @@ module.exports.generate_pdf_post_html = async (event, context) => {
     page.setContent(html)
     const pdf = await page.pdf({
       format: 'A4',
-      // printBackground: true,
+      printBackground: true,
       // displayHeaderFooter: true,
-      // margin: { top: '1.8cm', right: '1cm', bottom: '1cm', left: '1cm' },
+      margin: { top: '1.8cm', right: '1cm', bottom: '1cm', left: '1cm' },
     })
     console.log(pdf)
     // TODO: Response with PDF (or error if something went wrong )
@@ -52,23 +53,14 @@ module.exports.generate_pdf_post_html = async (event, context) => {
   }
 }
 
-// if (typeof event['body'] === 'string') {
-  // let data = event['body'];
-  // let buff = Buffer.from(data, 'base64');  
-  // let text = buff.toString('utf-8');
-//   const pdfContent = decodeURI(text).replace('text=','');
-//   console.log(pdfContent);
-//   console.log;opg
-// }
-
 function convertBase64RequestToString(base64Encoded) {
   let buff = Buffer.from(base64Encoded, 'base64');
-  // console.log('buff');
+  // console.log('Buffer.from(base64Encoded, "base64")');
   // console.log(buff);
   let text = buff.toString('utf-8');
   let pdfContent = decodeURI(text).replace('text=','');
   pdfContent = pdfContent.replace('text=','');
-  console.log('pdfContent');
+  console.log('final decoding pdfContent');
   console.log(pdfContent);
   return pdfContent;
 }

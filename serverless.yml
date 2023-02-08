@@ -4,6 +4,7 @@ app: puppet-pdf
 service: puppet-pdf
 
 plugins:
+  - serverless-offline
   - serverless-apigw-binary
 
 provider:
@@ -29,5 +30,3 @@ functions:
       - httpApi:
           method: post
           path: /api/pdfhtml
-          cors: true
-    timeout: 180
