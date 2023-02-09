@@ -15,15 +15,15 @@ module.exports.generate_pdf_post_html = async (event, context) => {
     const postBody = urlObjectPathname.split('&text=');
 
     var roughFileName = decodeURIComponent(postBody[0]);
-    const filename = roughFileName.split('filename=').pop();
+    var filename = roughFileName.split('filename=').pop();
     var decodedHTML = decodeURIComponent(postBody[1]);
      
-    console.log('decodedHTML');
-    console.log(decodedHTML);
+    // console.log('decodedHTML');
+    // console.log(decodedHTML);
     var rawHTML = decodedHTML.replace(/\+/g, " ");
   }
-  console.log('rawHTML');
-  console.log(rawHTML);
+  // console.log('rawHTML');
+  // console.log(rawHTML);
 
   if (typeof rawHTML !== 'string') {
     return context.logStreamName;
@@ -38,12 +38,18 @@ module.exports.generate_pdf_post_html = async (event, context) => {
 
   try {
       browser = await chromium.puppeteer.launch({
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        "--hide-scrollbars", 
+        "--no-sandbox",
+      ],
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath,
       headless: chromium.headless,
+      ignoreHTTPSErrors: true,
     });
-    const page = await browser.newPage()
+    const page = await browser.newPage();
+
     page.setContent(htmldoc);
     const pdf = await page.pdf({
       format: 'A4',
@@ -54,7 +60,7 @@ module.exports.generate_pdf_post_html = async (event, context) => {
     const response = {
       headers: {
         'Content-type': 'application/pdf',
-        'content-disposition': 'attachment; filename=test.pdf',
+        'content-disposition': 'attachment; filename=' + filename,
       },
       statusCode: 200,
       body: pdf.toString('base64'),
@@ -62,8 +68,7 @@ module.exports.generate_pdf_post_html = async (event, context) => {
     }
     context.succeed(response);
   } catch (error) {
-    console.log('CAUGHT EXCEPTION ERROR');
-    console.log(error);
+    
     return context.fail(error)
   } finally {
     if (browser !== null) {

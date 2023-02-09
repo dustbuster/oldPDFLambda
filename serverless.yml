@@ -8,7 +8,6 @@ provider:
   runtime: nodejs18.x
   region: us-west-2
   stage: ${opt:stage, 'development'}
-  lambdaHashingVersion: 20200924
   environment:
     ENV: ${self:provider.stage}
   apiGateway:
