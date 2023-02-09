@@ -10,9 +10,6 @@ module.exports.generate_pdf_post_html = async (event, context) => {
 
   console.log('let qs querystring.parse');
   console.log(qs);
-  console.log('decodeEntities(qs)');
-  console.log(decodeEntities(qs));
-
   let bodyDecoded = querystring.decode(qs);
   console.log('querystring.decode(qs)');
   console.log(bodyDecoded);
@@ -28,6 +25,8 @@ module.exports.generate_pdf_post_html = async (event, context) => {
       console.log(bodyDecoded);
       console.log('base 64 decode');
       console.log(base64decodedText);
+      console.log('decodeEntities(base64decodedText)');
+      console.log(decodeEntities(base64decodedText));
     } else {
       console.log('No base 64 decode needed');
       decodedText = event['body'].replace(removeAttribute + 'text=','');

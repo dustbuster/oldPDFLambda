@@ -5,7 +5,7 @@ service: puppet-pdf
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs18.x
   region: us-west-2
   stage: ${opt:stage, 'development'}
   lambdaHashingVersion: 20200924
