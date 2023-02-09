@@ -1,49 +1,40 @@
 'use strict'
 const chromium = require('chrome-aws-lambda')
-const querystring = require('querystring');
+const url = require('url');
+const pug = require('pug');
 
 module.exports.generate_pdf_post_html = async (event, context) => {
-  console.log('generate_pdf_post_html');
-  console.log('event');
-  console.log(event);
-  let qs = querystring.parse(event['body'], null, null, { decodeURIComponent: convertBase64RequestToString });
+  // debug_app(event, context);
+  // console.log("EVENT: \n" + JSON.stringify(event, null, 2))
+  // console.log(event['body']);
+  const body = event['body'];
+  
+  if (event['isBase64Encoded'] === true) {
+    let decodedTextBody = convertBase64RequestToString(body);
+    var urlObjectPathname = url.parse(decodedTextBody, true).pathname;
+    const postBody = urlObjectPathname.split('&text=');
 
-  console.log('let qs querystring.parse');
-  console.log(qs);
-  let bodyDecoded = querystring.decode(qs);
-  console.log('querystring.decode(qs)');
-  console.log(bodyDecoded);
-
-  if (typeof event['body'] === 'string') {
-    if (event['isBase64Encoded'] === true) {
-      console.log('bodyDecoded[text]');
-      console.log(event['body']);
-      var base64decodedText = convertBase64RequestToString(event['body']);
-      let bodyDecoded = querystring.decode(decodeURIComponent(event['body']));
-      bodyDecoded = querystring.parse(event['body'], null, null,{ decodeURIComponent: gbkDecodeURIComponent });
-      console.log('ALL bodyDecoded');
-      console.log(bodyDecoded);
-      console.log('base 64 decode');
-      console.log(base64decodedText);
-      console.log('decodeEntities(base64decodedText)');
-      console.log(decodeEntities(base64decodedText));
-    } else {
-      console.log('No base 64 decode needed');
-      decodedText = event['body'].replace(removeAttribute + 'text=','');
-    }
-
-    console.log('should be good markup:');
-    console.log(decodedText);
-  } else {
-    console.log('body does not exist, see event log');
+    var roughFileName = decodeURIComponent(postBody[0]);
+    const filename = roughFileName.split('filename=').pop();
+    var decodedHTML = decodeURIComponent(postBody[1]);
+     
+    console.log('decodedHTML');
+    console.log(decodedHTML);
+    var rawHTML = decodedHTML.replace(/\+/g, " ");
   }
-  const fileName = (typeof bodyDecoded['filename'] === 'string') ? base64Decode(bodyDecoded['filename']) : 'test.pdf'
-  console.log('fileName');
-  console.log(fileName);
+  console.log('rawHTML');
+  console.log(rawHTML);
 
-  const html = decodedText;
+  if (typeof rawHTML !== 'string') {
+    return context.logStreamName;
+  }
 
   let browser = null
+  const filter = {
+    html: rawHTML
+  }
+  const template = pug.compileFile('./src/template.pug')
+  const htmldoc = template({ filter })
 
   try {
       browser = await chromium.puppeteer.launch({
@@ -51,9 +42,9 @@ module.exports.generate_pdf_post_html = async (event, context) => {
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath,
       headless: chromium.headless,
-    })
+    });
     const page = await browser.newPage()
-    page.setContent(html)
+    page.setContent(htmldoc);
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -63,15 +54,15 @@ module.exports.generate_pdf_post_html = async (event, context) => {
     const response = {
       headers: {
         'Content-type': 'application/pdf',
-        'content-disposition': 'attachment; filename=' + fileName,
+        'content-disposition': 'attachment; filename=test.pdf',
       },
       statusCode: 200,
       body: pdf.toString('base64'),
       isBase64Encoded: true,
     }
-    context.succeed(response)
+    context.succeed(response);
   } catch (error) {
-    console.log('ERROR');
+    console.log('CAUGHT EXCEPTION ERROR');
     console.log(error);
     return context.fail(error)
   } finally {
@@ -81,9 +72,16 @@ module.exports.generate_pdf_post_html = async (event, context) => {
   }
 }
 
+function debug_app(event, context) { 
+  console.log('event - request');
+  console.log(event);
+  console.log('context - request');
+  console.log(context);
+}
+
+
+
 function convertBase64RequestToString(base64Encoded) {
-  console.log('convertBase64RequestToString base64Encoded');
-  console.log(base64Encoded);
   let buff = Buffer.from(base64Encoded, 'base64');
   let text = buff.toString('utf-8');
   return text;
@@ -99,6 +97,7 @@ function containsEncodedComponents(x) {
   return (decodeURI(x) !== decodeURIComponent(x));
 }
 
+// DOES NOT WORK
 function decodeEntities(encodedString) {
   var translate_re = /&(nbsp|amp|quot|lt|gt);/g;
   var translate = {
