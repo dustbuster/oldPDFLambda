@@ -3,13 +3,9 @@ app: puppet-pdf
 
 service: puppet-pdf
 
-plugins:
-  - serverless-offline
-  - serverless-apigw-binary
-
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   region: us-west-2
   stage: ${opt:stage, 'development'}
   lambdaHashingVersion: 20200924

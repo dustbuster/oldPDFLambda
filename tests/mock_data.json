@@ -34,6 +34,6 @@
 	  "time": "07/Feb/2023:16:32:35 +0000",
 	  "timeEpoch": 1675787555613
 	},
-	"body": "dGV4dCUzRCUyMiUzQ2gxJTNFSGVsbG8lMjBXb3JsZCUzQyUyRmgxJTNFJTIy",
-	"isBase64Encoded": true
+	"body": "<h1>Hello World</h1>",
+	"isBase64Encoded": false
   }
