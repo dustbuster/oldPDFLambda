@@ -2,13 +2,14 @@
 const chromium = require('chrome-aws-lambda')
 const url = require('url');
 const pug = require('pug');
+const puppeteer = require('puppeteer');
 
 module.exports.generate_pdf_post_html = async (event, context) => {
-  // debug_app(event, context);
-  // console.log("EVENT: \n" + JSON.stringify(event, null, 2))
-  // console.log(event['body']);
+  (async () => {
+    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+    await browser.close();
+  })();
   const body = event['body'];
-  
   if (event['isBase64Encoded'] === true) {
     let decodedTextBody = convertBase64RequestToString(body);
     var urlObjectPathname = url.parse(decodedTextBody, true).pathname;
@@ -17,15 +18,11 @@ module.exports.generate_pdf_post_html = async (event, context) => {
     var roughFileName = decodeURIComponent(postBody[0]);
     var filename = roughFileName.split('filename=').pop();
     var decodedHTML = decodeURIComponent(postBody[1]);
-     
-    // console.log('decodedHTML');
-    // console.log(decodedHTML);
     var rawHTML = decodedHTML.replace(/\+/g, " ");
   }
-  // console.log('rawHTML');
-  // console.log(rawHTML);
 
   if (typeof rawHTML !== 'string') {
+    console.log('EARLY BAIL OUT!');
     return context.logStreamName;
   }
 
@@ -33,8 +30,9 @@ module.exports.generate_pdf_post_html = async (event, context) => {
   const filter = {
     html: rawHTML
   }
-  const template = pug.compileFile('./src/template.pug')
-  const htmldoc = template({ filter })
+
+  const template = pug.compileFile('./src/template.pug');
+  let htmldoc = template({ filter });
 
   try {
       browser = await chromium.puppeteer.launch({
@@ -44,8 +42,9 @@ module.exports.generate_pdf_post_html = async (event, context) => {
         "--no-sandbox",
       ],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+      executablePath: 'node_modules/chrome-aws-lambda/bin/chromium.br',
+      headless: false,
+      ignoreDefaultArgs: ["--disable-extensions"],
       ignoreHTTPSErrors: true,
     });
     const page = await browser.newPage();
@@ -66,9 +65,10 @@ module.exports.generate_pdf_post_html = async (event, context) => {
       body: pdf.toString('base64'),
       isBase64Encoded: true,
     }
+    console.log('success response');
     context.succeed(response);
   } catch (error) {
-    
+    console.error(error)
     return context.fail(error)
   } finally {
     if (browser !== null) {
@@ -84,38 +84,9 @@ function debug_app(event, context) {
   console.log(context);
 }
 
-
-
 function convertBase64RequestToString(base64Encoded) {
   let buff = Buffer.from(base64Encoded, 'base64');
   let text = buff.toString('utf-8');
   return text;
 }
 
-function base64Decode(base64Encoded) {
-  let buff = Buffer.from(base64Encoded, 'base64');
-  return buff.toString('utf-8');
-}
-
-function containsEncodedComponents(x) {
-  // ie ?,=,&,/ etc
-  return (decodeURI(x) !== decodeURIComponent(x));
-}
-
-// DOES NOT WORK
-function decodeEntities(encodedString) {
-  var translate_re = /&(nbsp|amp|quot|lt|gt);/g;
-  var translate = {
-      "nbsp":" ",
-      "amp" : "&",
-      "quot": "\"",
-      "lt"  : "<",
-      "gt"  : ">"
-  };
-  return encodedString.replace(translate_re, function(match, entity) {
-      return translate[entity];
-  }).replace(/&#(\d+);/gi, function(match, numStr) {
-      var num = parseInt(numStr, 10);
-      return String.fromCharCode(num);
-  });
-}

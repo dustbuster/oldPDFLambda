@@ -5,7 +5,7 @@ service: puppet-pdf
 
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs16.x
   region: us-west-2
   stage: ${opt:stage, 'development'}
   environment:
@@ -14,9 +14,21 @@ provider:
     shouldStartNameWithService: true
 
 custom:
-  apigwBinary:
-    types:
-      - '*/*'
+  sourcemaps: false
+  copyFiles:
+    - from: 'node_modules/puppeteer-core/lib/cjs/puppeteer/common/Browser'
+    - to: ./bin
+    - from: 'node_modules/chrome-aws-lambda/bin/chromium.br'
+    - to: './bin'
+
+package:
+  patterns:
+    - '!pdf2.js'
+    - '!.git/**'
+    - '!pdf2.ts'
+    - '!tests/**'
+    - '!.cache/**'
+    - 'node_modules/**'
 
 functions:
   pdf-post-html:
